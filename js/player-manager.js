@@ -1,4 +1,4 @@
-import { BytebeatPlayer } from "/bbt.js";
+import { BytebeatPlayer } from "../bbt.js";
 
 export const player = new BytebeatPlayer();
 let isInitialized = false;

@@ -1,5 +1,5 @@
-import { renderBytebeat } from "/bbt.js";
-import { encodeWav } from "/js/export/wav-encoder.js";
+import { renderBytebeat } from "../../bbt.js";
+import { encodeWav } from "./wav-encoder.js";
 
 self.onmessage = (event) => {
     const {

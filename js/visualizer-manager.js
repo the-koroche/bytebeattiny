@@ -1,6 +1,6 @@
-import { player } from "/js/player-manager.js";
-import { WaveformVisualizer } from "/js/visualizer/waveform.js";
-import { FFTVisualizer } from "/js/visualizer/fft.js";
+import { player } from "./player-manager.js";
+import { WaveformVisualizer } from "./visualizer/waveform.js";
+import { FFTVisualizer } from "./visualizer/fft.js";
 
 export const visualizerCanvas = document.querySelector('#visualizer');
 const visualizerType = document.querySelector('#visualizer-type');

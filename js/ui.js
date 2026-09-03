@@ -1,8 +1,8 @@
-import { player, loadCode } from "/js/player-manager.js";
-import { getVisualizer } from "/js/visualizer-manager.js";
-import { downloadFile, getDateFilename } from "/js/download-file.js";
-import { renderBytebeat } from "/bbt.js";
-import { encodeWav } from "/js/export/wav-encoder.js"
+import { player, loadCode } from "./player-manager.js";
+import { getVisualizer } from "./visualizer-manager.js";
+import { downloadFile, getDateFilename } from "./download-file.js";
+import { renderBytebeat } from "../bbt.js";
+import { encodeWav } from "./export/wav-encoder.js"
 
 export function setupUI(codeEditor) {
     const exportWorker = new Worker(

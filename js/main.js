@@ -1,7 +1,7 @@
-import { CodeEditor } from "/js/editor/editor.js";
-import { setupUI } from "/js/ui.js";
-import { loadCode } from "/js/player-manager.js";
-import "/js/visualizer-manager.js"
+import { CodeEditor } from "./editor/editor.js";
+import { setupUI } from "./ui.js";
+import { loadCode } from "./player-manager.js";
+import "./visualizer-manager.js"
 
 const codeEditorContainer = document.querySelector('#code-editor');
 const errorText = document.querySelector("#error-text");

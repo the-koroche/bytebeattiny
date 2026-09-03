@@ -139,7 +139,7 @@ Type defines the return value: { bytebeat[bb|byte] | floatbeat[fb|float] | signb
 Notation defines the expression notation: { infix[ifx|js] | postfix[rpn|post] | prefix[pre] }.
 
 Funcbeat is supported only in infix notation.
-Read more here: https://github.com/the-koroche/bytebeatttiny/
+Read more here: https://github.com/the-koroche/bytebeattiny
 */
 // Check out the examples below, and try to modify them!
 t & t >> 8
