@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bytebeat Tiny</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/editor.css">
+</head>
+<body>
+    <main class="app-layout">
+        <section class="visualizer-container" id="visualizer-container">
+            <canvas id="visualizer"></canvas>
+        </section>
+
+        <section class="editor-container" id="editor-container">
+            <header class="toolbar">
+                <fieldset class="toolbar-group" aria-label="Time controls">
+                    <label for="t-value" class="field-label">t</label>
+                    <input type="number" id="t-value" value="0" readonly>
+                </fieldset>
+
+                <fieldset class="toolbar-group" aria-label="Playback controls">
+                    <button id="stop-button" title="Stop"></button>
+                    <button id="rewind-button" title="Rewind"></button>
+                    <button id="reverse-button" title="Reverse"></button>
+                    <button id="pause-button" title="Pause"></button>
+                    <button id="play-button" title="Play"></button>
+                </fieldset>
+
+                <fieldset class="toolbar-group" aria-label="Volume controls">
+                    <label for="volume-range" class="field-label">Volume:</label>
+                    <input type="range" id="volume-range" min="0" max="150" value="75">
+                    <output id="volume-value">75%</output>
+                </fieldset>
+
+                <fieldset class="toolbar-group" aria-label="Visualizer settings">
+                    <select id="visualizer-type">
+                        <option value="none">None</option>
+                        <option value="fft">FFT</option>
+                        <option value="waveform">Waveform</option>
+                    </select>
+                    <button id="visualizer-less" title="Decrease buffer"></button>
+                    <span id="visualizer-buffer-size">?</span>
+                    <button id="visualizer-more" title="Increase buffer"></button>
+                </fieldset>
+
+                <span id="error-text" class="error-message" style="display: none;"></span>
+
+                <fieldset class="toolbar-group toolbar-group--right" aria-label="Export controls">
+                    <button id="download-code-button" title="Download code"></button>
+                    <button id="export-sound-button" title="Export sound"></button>
+                </fieldset>
+            </header>
+
+            <div class="code-editor" id="code-editor">
+                <div class="gutter"></div>
+                <div class="code-wrapper">
+                    <pre><code id="code-highlight"></code></pre>
+                    <textarea
+                        id="code-input"
+                        spellcheck="false"
+                        autocorrect="off"
+                        autocapitalize="off"
+                        autocomplete="off">
+                    </textarea>
+                </div>
+            </div>
+        </section>
+
+        <div class="dialog-overlay" id="export-sound-overlay" style="display: none;">
+            <dialog class="dialog-window" id="export-sound-window" open>
+                <form method="dialog" class="dialog-form">
+                    <h3>Export Audio</h3>
+
+                    <div class="form-row">
+                        <label for="export-speed">Speed:</label>
+                        <input type="number" id="export-speed" value="1" step="any">
+                    </div>
+
+                    <div class="form-row form-row--range">
+                        <div class="form-field">
+                            <label for="export-range-start">Start t:</label>
+                            <input type="number" id="export-range-start" value="0">
+                        </div>
+                        <div class="form-field">
+                            <label for="export-range-end">End t:</label>
+                            <input type="number" id="export-range-end" value="80000">
+                        </div>
+                    </div>
+
+                    <div class="export-progress">
+                        <progress class="progress-bar" id="export-progress-bar" value="0" max="100"></progress>
+                        <span class="progress-value" id="export-progress-value">0%</span>
+                    </div>
+
+                    <footer class="dialog-actions">
+                        <button type="button" id="export-cancel">Cancel</button>
+                        <button type="submit" id="export-sound" class="button--primary">Export</button>
+                    </footer>
+                </form>
+            </dialog>
+        </div>
+    </main>
+
+    <script>
+        const canvas = document.querySelector("#visualizer");
+        function resize() {
+            canvas.width = canvas.clientWidth * devicePixelRatio;
+            canvas.height = canvas.clientHeight * devicePixelRatio;
+        }
+        window.addEventListener("resize", resize);
+        resize();
+    </script>
+    <script type="module" src="js/main.js"></script>
+</body>
+</html>

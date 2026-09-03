@@ -1,0 +1,32 @@
+:root {
+    /* VS Code Dark inspired */
+    --syntax-comment: #6a9955;
+    --syntax-string: #ce9178;
+    --syntax-function: #dcdcaa;
+    --syntax-identifier: #9cdcfe;
+    --syntax-operator: #d4d4d4;
+
+    --syntax-keyword: #569cd6;
+    --syntax-control: #c586c0;
+    --syntax-number: #b0c9a4;
+
+    --syntax-error: #ee4b4b;
+
+    --syntax-bracket-1: #ffd700;
+    --syntax-bracket-2: #da70d6;
+    --syntax-bracket-3: #179fff;
+}
+
+.comment { color: var(--syntax-comment); }
+.string { color: var(--syntax-string); }
+.function { color: var(--syntax-function); }
+.identifier { color: var(--syntax-identifier); }
+.operator { color: var(--syntax-operator); }
+.keyword { color: var(--syntax-keyword); font-weight: 600; }
+.control { color: var(--syntax-control); }
+.number { color: var(--syntax-number); }
+.error { color: var(--syntax-error); }
+
+.bracket-1 { color: var(--syntax-bracket-1); }
+.bracket-2 { color: var(--syntax-bracket-2); }
+.bracket-3 { color: var(--syntax-bracket-3); }

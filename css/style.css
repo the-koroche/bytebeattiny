@@ -1,0 +1,349 @@
+:root {
+    --font-size: 14px;
+    --button-size: 24px;
+
+    --border-color: #888;
+    --border-radius: 5px;
+
+    --font-main: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-editor: monospace;
+
+    --bg: #0b0f14;
+    --text-main: #d8dee9;
+    --accent-color: #bad;
+    --accent-active: #bbafdf;
+}
+
+html, body {
+    height: 100%;
+    margin: 0;
+}
+
+body {
+    font-family: var(--font-main);
+    font-size: var(--font-size);
+    display: flex;
+    flex-direction: column;
+    color: var(--text-main);
+    background: var(--bg);
+}
+
+.app-layout {
+    position: relative;
+    overflow: hidden;
+    flex: 1;
+}
+
+/* Visualizer Layer */
+.visualizer-container {
+    position: absolute;
+    z-index: 0;
+    pointer-events: none;
+    inset: 0;
+}
+
+.visualizer-container canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+/* Editor Main Container */
+.editor-container {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    padding: 0 10px;
+    box-sizing: border-box;
+    background: transparent;
+}
+
+/* Toolbar & Control Groups */
+.toolbar {
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    flex-direction: row;
+    flex-wrap: wrap;
+    margin: 10px 0;
+    flex: 0 0 auto;
+    gap: 12px;
+}
+
+.toolbar-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    border: none;
+    margin: 0;
+    padding: 0;
+}
+
+.toolbar-group--right {
+    margin-left: auto;
+}
+
+.field-label {
+    user-select: none;
+    font-size: 14px;
+    color: #d4d4d4;
+}
+
+/* Form Controls & Buttons Base */
+button:focus-visible,
+input:focus-visible,
+select:focus-visible {
+    outline: 2px solid var(--accent-color);
+    outline-offset: 1px;
+}
+
+button,
+input[type='number'],
+select {
+    color: white;
+    border: 2px solid var(--border-color);
+    border-radius: var(--border-radius);
+    background: #06070a88;
+    font-family: inherit;
+    font-size: inherit;
+}
+
+button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--button-size);
+    height: var(--button-size);
+    cursor: pointer;
+    user-select: none;
+    transition: all 0.1s ease;
+}
+
+button:hover {
+    border-color: var(--accent-color);
+}
+
+button:enabled:active {
+    color: #000;
+    border-color: var(--accent-active);
+    background: #fff;
+}
+
+button:disabled {
+    border-color: #777;
+    background-color: #555;
+    color: #aaa;
+}
+
+/* Custom Text / Number Inputs */
+input[type='number'] {
+    appearance: textfield;
+    -moz-appearance: textfield;
+    padding: 3px 6px;
+}
+
+input[type='number']::-webkit-inner-spin-button,
+input[type='number']::-webkit-outer-spin-button {
+    margin: 0;
+    -webkit-appearance: none;
+}
+
+select {
+    padding: 3px 6px;
+}
+
+/* Volume Slider & Output */
+#volume-range {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 80px;
+    height: 6px;
+    background: #555;
+    border-radius: 2px;
+    outline: none;
+    cursor: pointer;
+}
+
+#volume-range::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #fff;
+    cursor: pointer;
+    transition: transform 0.1s ease, background-color 0.2s ease;
+}
+
+#volume-range::-moz-range-thumb {
+    width: 12px;
+    height: 12px;
+    border: none;
+    border-radius: 50%;
+    background: #fff;
+    cursor: pointer;
+    transition: transform 0.1s ease, background-color 0.2s ease;
+}
+
+#volume-value {
+    font-variant-numeric: tabular-nums;
+    cursor: pointer;
+    user-select: none;
+}
+
+#volume-value:hover {
+    font-weight: 800;
+}
+
+/* Button Icons & Sizing */
+#stop-button { font-size: 18px; }
+#stop-button::before { content: "⏹"; }
+
+#rewind-button { font-size: 14px; font-weight: 800; }
+#rewind-button::before { content: "0"; }
+
+#reverse-button::before { content: "◀"; }
+#pause-button { font-size: 18px; }
+#pause-button::before { content: "⏸"; }
+#play-button::before { content: "▶"; }
+
+#reverse-button,
+#play-button,
+#visualizer-less,
+#visualizer-more {
+    font-size: 10px;
+}
+
+#visualizer-less::before { content: "◀"; }
+#visualizer-more::before { content: "▶"; }
+
+#download-code-button { font-size: 20px; }
+#download-code-button::before { content: "⬇"; }
+
+#export-sound-button { font-size: 16px; font-weight: 600; }
+#export-sound-button::before { content: "E"; }
+
+/* Status & Errors */
+.error-message {
+    color: #f00;
+    user-select: auto;
+    text-shadow: 2px 2px 0 #000a;
+}
+
+/* Dialog & Modal Overlay */
+.dialog-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(2px);
+}
+
+.dialog-window {
+    background: #121820;
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    color: var(--text-main);
+    padding: 16px 20px;
+    min-width: 280px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+}
+
+.dialog-form h3 {
+    margin: 0 0 16px 0;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.form-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.form-row--range {
+    display: flex;
+    gap: 12px;
+}
+
+.form-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1;
+}
+
+.dialog-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 20px;
+}
+
+.dialog-actions button {
+    width: auto;
+    height: auto;
+    padding: 6px 14px;
+}
+
+.button--primary {
+    border-color: var(--accent-color);
+    background: #1a2332;
+}
+
+.button--primary:hover {
+    background: var(--accent-color);
+    color: #000;
+}
+
+/* Progress bar */
+.progress {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    margin: 4px 0 12px;
+    box-sizing: border-box;
+}
+
+.progress-bar {
+    flex: 1;
+    width: 100%;
+    height: 10px;
+    appearance: none;
+    -webkit-appearance: none;
+    border: 2px solid var(--border-color);
+    border-radius: var(--border-radius);
+    background: #06070a88;
+    overflow: hidden;
+}
+
+.progress-bar::-webkit-progress-bar {
+    background: #06070a88;
+    border-radius: var(--border-radius);
+}
+
+.progress-bar::-webkit-progress-value {
+    background: var(--accent-color);
+    border-radius: 3px;
+    transition: width 0.1s ease;
+}
+
+.progress-bar::-moz-progress-bar {
+    background: var(--accent-color);
+    border-radius: 3px;
+}
+
+.progress-value {
+    min-width: 42px;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    user-select: none;
+    color: var(--text-main);
+}
