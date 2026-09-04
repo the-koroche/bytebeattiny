@@ -125,23 +125,15 @@ export class CodeEditor {
         this.bindEvents();
 
         const defaultCode =
-`// Welcome to Bytebeat Tiny!
-// This is an live editor for bbt.js library.
+`// Bytebeat Tiny - Live Editor (bbt.js)
+// Docs: https://github.com/the-koroche/bytebeattiny
+
 /*! 8000 bytebeat infix */
-/*  │    │        |
-    │    │        └─> Notation
-    │    └─> Type
-    └─> Sample rate
+//  │    │        └─ Notation: infix [ifx|js] | postfix [rpn] | prefix [pre]
+//  │    └────────── Type: bytebeat [bb] | floatbeat [fb]* | signbeat [sb] | funcbeat [fun]
+//  └─────────────── Rate: 8000 | 8k (=8000) | 44k1 (=44100)
+//                   *funcbeat supported only in infix notation
 
-This is a bytebeat directive. It specifies parameters below:
-Sample rate can be wrote: { 8000 | 8k (= 8000) | 44k1 (= 44100) | k8 = (800)}.
-Type defines the return value: { bytebeat[bb|byte] | floatbeat[fb|float] | signbeat[sb|sign] | funcbeat[fun] }.
-Notation defines the expression notation: { infix[ifx|js] | postfix[rpn|post] | prefix[pre] }.
-
-Funcbeat is supported only in infix notation.
-Read more here: https://github.com/the-koroche/bytebeattiny
-*/
-// Check out the examples below, and try to modify them!
 t & t >> 8
 // ((t >> 10) & 42) * t
 // -(t & t >> 8) | -(t >> 4) | t * t

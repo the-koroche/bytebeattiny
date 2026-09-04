@@ -1,12 +1,10 @@
 import { player, loadCode } from "./player-manager.js";
 import { getVisualizer } from "./visualizer-manager.js";
 import { downloadFile, getDateFilename } from "./download-file.js";
-import { renderBytebeat } from "../bbt.js";
-import { encodeWav } from "./export/wav-encoder.js"
 
 export function setupUI(codeEditor) {
     const exportWorker = new Worker(
-        "/js/export/export-worker.js",
+        new URL("./export/export-worker.js", import.meta.url),
         { type: "module" }
     );
 
@@ -65,21 +63,22 @@ export function setupUI(codeEditor) {
         speed = Math.min(Math.max(speed, -64), 64);
 
         if (speed < 0) {
-            buttonReverse.innerHTML = `${Math.min(-speed * 2, 64)}`;
-            buttonPlay.innerHTML = '';
+            buttonReverse.textContent = Math.min(-speed * 2, 64);
+            buttonPlay.textContent = '';
             buttonReverse.disabled = -speed === 64;
             buttonPlay.disabled = false;
         } else if (speed > 0) {
-            buttonReverse.innerHTML = '';
-            buttonPlay.innerHTML = `${Math.min(speed * 2, 64)}`;
+            buttonReverse.textContent = '';
+            buttonPlay.textContent = Math.min(speed * 2, 64);
             buttonReverse.disabled = false;
             buttonPlay.disabled = speed === 64;
         } else {
             buttonReverse.disabled = false;
             buttonPlay.disabled = false;
-            buttonReverse.innerHTML = '';
-            buttonPlay.innerHTML = '';
+            buttonReverse.textContent = '';
+            buttonPlay.textContent = '';
         }
+
         player.speed = speed;
 
         const source = codeEditor.textarea.value;

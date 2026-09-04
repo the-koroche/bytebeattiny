@@ -38,7 +38,7 @@
                     <select id="visualizer-type">
                         <option value="none">None</option>
                         <option value="fft">FFT</option>
-                        <option value="waveform">Waveform</option>
+                        <option value="waveform" selected>Waveform</option>
                     </select>
                     <button id="visualizer-less" title="Decrease buffer"></button>
                     <span id="visualizer-buffer-size">?</span>
@@ -74,17 +74,17 @@
                     <h3>Export Audio</h3>
 
                     <div class="form-row">
-                        <label for="export-speed">Speed:</label>
+                        <label for="export-speed" class="field-label">Speed:</label>
                         <input type="number" id="export-speed" value="1" step="any">
                     </div>
 
                     <div class="form-row form-row--range">
                         <div class="form-field">
-                            <label for="export-range-start">Start t:</label>
+                            <label for="export-range-start" class="field-label">Start t:</label>
                             <input type="number" id="export-range-start" value="0">
                         </div>
                         <div class="form-field">
-                            <label for="export-range-end">End t:</label>
+                            <label for="export-range-end" class="field-label">End t:</label>
                             <input type="number" id="export-range-end" value="80000">
                         </div>
                     </div>
