@@ -199,6 +199,9 @@ input[type='number'] {
     appearance: textfield;
     -moz-appearance: textfield;
     padding: 3px 6px;
+    box-sizing: border-box;
+    width: 8em;
+    text-align: right;
 }
 
 input[type='number']::-webkit-inner-spin-button,
@@ -363,6 +366,11 @@ select {
     padding: 16px 20px;
     min-width: 280px;
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+
+    box-sizing: border-box;
+    width: min(calc(100vw - 32px), 450px);
+    max-height: 90vh;
+    overflow-y: auto;
 }
 
 .dialog-form h3 {
@@ -386,6 +394,7 @@ select {
 .form-field {
     display: flex;
     flex-direction: column;
+    min-width: 0;
     gap: 4px;
     flex: 1;
 }
