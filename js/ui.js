@@ -57,26 +57,34 @@ export function setupUI(codeEditor) {
         return player;
     }
 
+    function setButtonText(button, text) {
+        button.textContent = text;
+        button.classList.toggle('has-text', text !== '');
+    }
+
     async function setPlaybackSpeed(speed) {
         await ensurePlayer();
 
         speed = Math.min(Math.max(speed, -64), 64);
 
         if (speed < 0) {
-            buttonReverse.textContent = Math.min(-speed * 2, 64);
-            buttonPlay.textContent = '';
+            setButtonText(buttonReverse, Math.min(-speed * 2, 64));
+            setButtonText(buttonPlay, '');
+
             buttonReverse.disabled = -speed === 64;
             buttonPlay.disabled = false;
         } else if (speed > 0) {
-            buttonReverse.textContent = '';
-            buttonPlay.textContent = Math.min(speed * 2, 64);
+            setButtonText(buttonReverse, '');
+            setButtonText(buttonPlay, Math.min(speed * 2, 64));
+
             buttonReverse.disabled = false;
             buttonPlay.disabled = speed === 64;
         } else {
+            setButtonText(buttonReverse, '');
+            setButtonText(buttonPlay, '');
+
             buttonReverse.disabled = false;
             buttonPlay.disabled = false;
-            buttonReverse.textContent = '';
-            buttonPlay.textContent = '';
         }
 
         player.speed = speed;
