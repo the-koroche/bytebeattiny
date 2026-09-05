@@ -204,14 +204,17 @@ function removeJsComments(expr, config = {}) {
  * @returns {number} Normalizes bytebeat output value to range [-1.0, 1.0].
  */
 function normalizeBytebeat(type, v) {
-    const normalizers = {
-        bytebeat: (v) => ((Math.floor(v) % 256 + 256) % 256) / 127.5 - 1,
-        signbeat: (v) => v / 128,
-        floatbeat: (v) => Math.max(-1, Math.min(1, v)),
-        funcbeat: (v) => Math.max(-1, Math.min(1, v)),
-    };
-
-    return (normalizers[type] ?? (() => 0))(v);
+    switch (type) {
+        case 'bytebeat':
+            return (v & 255) / 127.5 - 1;
+        case 'signbeat':
+            return v / 128;
+        case 'floatbeat':
+        case 'funcbeat':
+            return Math.max(-1, Math.min(1, v));
+        default:
+            return 0;
+    }
 }
 
 /**
@@ -479,11 +482,10 @@ class BytebeatParser {
 const workletSource = `
 class BytebeatProcessor extends AudioWorkletProcessor {
     /**
-     * Math normalization formulas mapping raw formula values to AudioBuffer's [-1.0, 1.0] range.
      * @type {Record<string, function(number): number>}
      */
     static normalizers = {
-        bytebeat: v => ((Math.floor(v) % 256 + 256) % 256) / 127.5 - 1,
+        bytebeat: v => ((v & 255) / 127.5) - 1,
         signbeat: v => v / 128,
         floatbeat: v => Math.max(-1, Math.min(1, v)),
         funcbeat: v => Math.max(-1, Math.min(1, v)),
@@ -493,8 +495,9 @@ class BytebeatProcessor extends AudioWorkletProcessor {
         super();
         this.t = 0;
         this.renderFn = null;
+        this.normalizeFn = BytebeatProcessor.normalizers.bytebeat;
         this.bbtType = 'bytebeat';
-        this.speed = 0; // Playback state: 0 = paused, 1 = normal, -1 = reverse
+        this.speed = 0;
         this.targetSampleRate = 8000;
         this.contextSampleRate = 44100;
 
@@ -504,7 +507,7 @@ class BytebeatProcessor extends AudioWorkletProcessor {
         this.lastIsStereo = false;
 
         this.samplesSinceLastUpdate = 0;
-        this.updateIntervalSamples = 512; // Throttle UI progress messages
+        this.updateIntervalSamples = 512;
 
         this.buffer = {
             left: new Float32Array(this.updateIntervalSamples),
@@ -515,10 +518,6 @@ class BytebeatProcessor extends AudioWorkletProcessor {
         this.port.onmessage = (event) => this.#handleMessage(event.data);
     }
 
-    /**
-     * Handles incoming IPC messages from the main thread thread-port.
-     * @param {Object} data - Payload data.
-     */
     #handleMessage(data) {
         switch (data.type) {
             case 'init':
@@ -533,20 +532,16 @@ class BytebeatProcessor extends AudioWorkletProcessor {
         }
     }
 
-    /**
-     * Compiles and loads the bytebeat JavaScript expression dynamically into the processor instance.
-     * @param {Object} payload - Object containing expression string and audio options.
-     */
     #loadExpression({ expression, bbtType, sampleRate, ctxSampleRate }) {
         try {
-            this.bbtType = bbtType;
+            this.bbtType = bbtType || 'bytebeat';
             this.targetSampleRate = sampleRate || 8000;
             this.contextSampleRate = ctxSampleRate || 44100;
+            this.normalizeFn = BytebeatProcessor.normalizers[this.bbtType] ?? BytebeatProcessor.normalizers.bytebeat;
 
             if (this.bbtType === 'funcbeat') {
                 const outerFn = new Function('t', \`with(Math){ \${expression} }\`);
                 const userFn = outerFn();
-
                 this.renderFn = typeof userFn === 'function' ? userFn : null;
             } else {
                 this.renderFn = new Function('t', \`with(Math){ return \${expression}; }\`);
@@ -556,38 +551,44 @@ class BytebeatProcessor extends AudioWorkletProcessor {
         }
     }
 
-    /**
-     * Primary audio render step callback called continuously by the AudioWorklet thread engine.
-     * @param {Float32Array[][]} _inputs - Input audio channels (unused).
-     * @param {Float32Array[][]} outputs - Output audio channel buffers array.
-     * @returns {boolean} Keep worklet instance alive state.
-     */
     process(_inputs, outputs) {
-        const output = outputs[0];
-        const channelCount = output.length;
-        const bufferSize = output[0].length;
-
-        if (!this.renderFn || this.speed === 0) {
-            for (let c = 0; c < channelCount; c++) output[c].fill(0);
+        const renderFn = this.renderFn;
+        if (!renderFn || this.speed === 0) {
+            const output = outputs[0];
+            for (let c = 0; c < output.length; c++) output[c].fill(0);
             return true;
         }
 
-        const normalize = BytebeatProcessor.normalizers[this.bbtType] ?? (() => 0);
-        const dt = (this.targetSampleRate / this.contextSampleRate) * this.speed;
+        const output = outputs[0];
+        const channelCount = output.length;
+        const bufferSize = output[0].length;
+        const out0 = output[0];
+        const out1 = channelCount > 1 ? output[1] : null;
+
+        const normalize = this.normalizeFn;
+        const targetSR = this.targetSampleRate;
+        const dt = (targetSR / this.contextSampleRate) * this.speed;
         const isFuncbeat = this.bbtType === 'funcbeat';
 
-        for (let i = 0; i < bufferSize; i++) {
-            const currentT = Math.floor(this.t);
+        let t = this.t;
+        let lastT = this.lastT;
+        let lastLeft = this.lastLeft;
+        let lastRight = this.lastRight;
+        let lastIsStereo = this.lastIsStereo;
 
-            if (currentT !== this.lastT) {
+        const bufLeft = this.buffer.left;
+        const bufRight = this.buffer.right;
+        let bufIndex = this.bufIndex;
+
+        for (let i = 0; i < bufferSize; i++) {
+            const currentT = t | 0;
+
+            if (currentT !== lastT) {
                 let value;
                 try {
-                    if (isFuncbeat) {
-                        const timeInSeconds = currentT / this.targetSampleRate;
-                        value = this.renderFn(timeInSeconds, this.targetSampleRate);
-                    } else {
-                        value = this.renderFn(currentT);
-                    }
+                    value = isFuncbeat
+                        ? renderFn(currentT / targetSR, targetSR)
+                        : renderFn(currentT);
 
                     if (typeof value !== 'number' && !Array.isArray(value) && !ArrayBuffer.isView(value)) {
                         value = 0;
@@ -596,48 +597,49 @@ class BytebeatProcessor extends AudioWorkletProcessor {
                     value = 0;
                 }
 
-                this.lastIsStereo = Array.isArray(value) || ArrayBuffer.isView(value);
+                lastIsStereo = Array.isArray(value) || ArrayBuffer.isView(value);
 
-                let leftRaw = this.lastIsStereo ? value[0] : value;
-                let rightRaw = this.lastIsStereo ? (value[1] ?? value[0]) : value;
+                let leftRaw = lastIsStereo ? value[0] : value;
+                let rightRaw = lastIsStereo ? (value[1] ?? value[0]) : value;
 
                 if (!Number.isFinite(leftRaw))  leftRaw = 0;
                 if (!Number.isFinite(rightRaw)) rightRaw = 0;
 
-                this.lastLeft = Math.max(-1, Math.min(1, normalize(leftRaw)));
-                this.lastRight = Math.max(-1, Math.min(1, normalize(rightRaw)));
-
-                this.lastT = currentT;
+                lastLeft = Math.max(-1, Math.min(1, normalize(leftRaw)));
+                lastRight = Math.max(-1, Math.min(1, normalize(rightRaw)));
+                lastT = currentT;
             }
 
-            const left = this.lastLeft;
-            const right = this.lastRight;
-
-            if (this.bufIndex < this.updateIntervalSamples) {
-                this.buffer.left[this.bufIndex] = left;
-                this.buffer.right[this.bufIndex] = right;
-                this.bufIndex++;
+            if (bufIndex < this.updateIntervalSamples) {
+                bufLeft[bufIndex] = lastLeft;
+                bufRight[bufIndex] = lastRight;
+                bufIndex++;
             }
 
-            output[0][i] = left;
-            if (channelCount > 1) {
-                output[1][i] = right;
-            }
+            out0[i] = lastLeft;
+            if (out1) out1[i] = lastRight;
 
-            this.t += dt;
+            t += dt;
         }
+
+        this.t = t;
+        this.lastT = lastT;
+        this.lastLeft = lastLeft;
+        this.lastRight = lastRight;
+        this.lastIsStereo = lastIsStereo;
+        this.bufIndex = bufIndex;
 
         this.samplesSinceLastUpdate += bufferSize;
         if (this.samplesSinceLastUpdate >= this.updateIntervalSamples) {
             this.port.postMessage({
                 type: 't-update',
-                t: Math.floor(this.t),
-                isMono: !this.lastIsStereo,
+                t: lastT,
+                isMono: !lastIsStereo,
                 buffer: {
-                    left: this.buffer.left,
-                    right: this.buffer.right,
+                    left: bufLeft,
+                    right: bufRight,
                 }
-            }, [this.buffer.left.buffer, this.buffer.right.buffer]);
+            }, [bufLeft.buffer, bufRight.buffer]);
 
             this.buffer.left = new Float32Array(this.updateIntervalSamples);
             this.buffer.right = new Float32Array(this.updateIntervalSamples);
@@ -891,62 +893,115 @@ function renderBytebeat(
     const start = tRange.start;
     const end = tRange.end;
     const step = speed;
-
     const totalSamples = Math.max(0, Math.ceil(Math.abs(end - start) / Math.abs(step)));
 
     const leftBuffer = new Float32Array(totalSamples);
     let rightBuffer = null;
-
     let isStereo = false;
     const isFuncbeat = type === 'funcbeat';
-
-    let writeIdx = 0;
-    const condition = step > 0 ? (t => t < end) : (t => t > end);
-
+    const normalize = normalizeBytebeat;
     const progressChunk = 1000;
 
-    for (let t = start; condition(t); t += step) {
+    let writeIdx = 0;
+    let t = start;
+
+    // Mono phase
+    while ((step > 0 ? t < end : t > end) && !isStereo) {
         const currentT = Math.floor(t);
         let rawValue;
-
         try {
-            if (isFuncbeat) {
-                rawValue = renderFn(currentT / sampleRate, sampleRate);
-            } else {
-                rawValue = renderFn(currentT);
-            }
+            rawValue = isFuncbeat
+                ? renderFn(currentT / sampleRate, sampleRate)
+                : renderFn(currentT);
         } catch {
             rawValue = 0;
         }
 
         const hasStereoSignal = Array.isArray(rawValue) || ArrayBuffer.isView(rawValue);
-        if (hasStereoSignal && !isStereo) {
+
+        if (hasStereoSignal) {
+            // Goto stereo phase
             isStereo = true;
             rightBuffer = new Float32Array(totalSamples);
             rightBuffer.set(leftBuffer.subarray(0, writeIdx));
+
+            let leftRaw = rawValue[0];
+            let rightRaw = rawValue[1] ?? rawValue[0];
+            if (typeof leftRaw !== 'number' || !Number.isFinite(leftRaw)) leftRaw = 0;
+            if (typeof rightRaw !== 'number' || !Number.isFinite(rightRaw)) rightRaw = 0;
+
+            leftBuffer[writeIdx] = normalize(type, leftRaw);
+            rightBuffer[writeIdx] = normalize(type, rightRaw);
+            writeIdx++;
+
+            if (onProgress && (writeIdx % progressChunk === 0 || writeIdx === totalSamples)) {
+                onProgress({
+                    processedT: currentT,
+                    processedSamples: writeIdx,
+                    totalSamples,
+                    percent: Math.round((writeIdx / totalSamples) * 100)
+                });
+            }
+
+            t += step;
+            break; // Goto stereo phase
+        } else {
+            let leftRaw = rawValue;
+            if (typeof leftRaw !== 'number' || !Number.isFinite(leftRaw)) leftRaw = 0;
+            leftBuffer[writeIdx] = normalize(type, leftRaw);
+            writeIdx++;
+
+            if (onProgress && (writeIdx % progressChunk === 0 || writeIdx === totalSamples)) {
+                onProgress({
+                    processedT: currentT,
+                    processedSamples: writeIdx,
+                    totalSamples,
+                    percent: Math.round((writeIdx / totalSamples) * 100)
+                });
+            }
+
+            t += step;
+        }
+    }
+
+    // Stereo phase
+    while (isStereo && (step > 0 ? t < end : t > end)) {
+        const currentT = Math.floor(t);
+        let rawValue;
+        try {
+            rawValue = isFuncbeat
+                ? renderFn(currentT / sampleRate, sampleRate)
+                : renderFn(currentT);
+        } catch {
+            rawValue = 0;
         }
 
-        let leftRaw = hasStereoSignal ? rawValue[0] : rawValue;
-        let rightRaw = hasStereoSignal ? (rawValue[1] ?? rawValue[0]) : rawValue;
+        let leftRaw, rightRaw;
+        if (Array.isArray(rawValue) || ArrayBuffer.isView(rawValue)) {
+            leftRaw = rawValue[0];
+            rightRaw = rawValue[1] ?? rawValue[0];
+        } else {
+            leftRaw = rawValue;
+            rightRaw = rawValue;
+        }
 
         if (typeof leftRaw !== 'number' || !Number.isFinite(leftRaw)) leftRaw = 0;
         if (typeof rightRaw !== 'number' || !Number.isFinite(rightRaw)) rightRaw = 0;
 
-        leftBuffer[writeIdx] = normalizeBytebeat(type, leftRaw);
-        if (isStereo && rightBuffer) {
-            rightBuffer[writeIdx] = normalizeBytebeat(type, rightRaw);
-        }
-
+        leftBuffer[writeIdx] = normalize(type, leftRaw);
+        rightBuffer[writeIdx] = normalize(type, rightRaw);
         writeIdx++;
 
         if (onProgress && (writeIdx % progressChunk === 0 || writeIdx === totalSamples)) {
             onProgress({
                 processedT: currentT,
                 processedSamples: writeIdx,
-                totalSamples: totalSamples,
+                totalSamples,
                 percent: Math.round((writeIdx / totalSamples) * 100)
             });
         }
+
+        t += step;
     }
 
     return {
@@ -954,9 +1009,9 @@ function renderBytebeat(
             left: leftBuffer,
             right: rightBuffer
         },
-        sampleRate: sampleRate,
+        sampleRate,
         channels: isStereo ? 2 : 1,
-        type: type,
+        type,
         notation: parsed.notation,
     };
 }
